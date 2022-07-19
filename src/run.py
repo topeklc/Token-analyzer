@@ -1,8 +1,11 @@
 # coding=utf8
 from multiprocessing import Process, Queue
 import subprocess
+import logging
 
 from src.analyzer.analyzer import Analyzer
+
+logging.getLogger(__name__)
 
 que = Queue()
 using_ports = []
@@ -23,7 +26,7 @@ def run_ganache(port, chain):
 
 
 def get_free_port():
-    return 6000 if 6000 not in using_ports else using_ports[-1] + 1
+    return 6000 if 6000 not in using_ports else sorted(using_ports)[-1] + 1
 
 
 def run(token, chain):
@@ -42,51 +45,51 @@ def run(token, chain):
         account = []
         for _ in range(2):
             account.append(que.get())
-        chain = Analyzer(account, token, chain, port)
+        analyzer = Analyzer(account, token, chain, port)
         try:
-            name, symbol = chain.check_name_and_symbol()
+            name, symbol = analyzer.check_name_and_symbol()
         except Exception as e:
-            print("Not able to get name and symbol")
+            logging.error(f"Not able to get name and symbol due to {e}")
             name, symbol = None, None
         try:
-            buy_tax = round(chain.check_buy_tax(0.01), 1)
+            buy_tax = round(analyzer.check_buy_tax(0.01), 1)
         except Exception as e:
-            print("Not able to get buy tax")
+            logging.error(f"Not able to get buy tax due to {e}")
             buy_tax = None
         try:
-            sell_tax = round(chain.check_sell_tax(), 1)
+            sell_tax = round(analyzer.check_sell_tax(), 1)
         except Exception as e:
-            print("Not able to get sell tax")
+            logging.error(f"Not able to get sell tax due to {e}")
             sell_tax = None
         try:
-            total_supply = chain.get_total_supply()
+            total_supply = analyzer.get_total_supply()
         except Exception as e:
-            print("Not able to get total supply")
+            logging.error(f"Not able to get total supply due to {e}")
             total_supply = None
         try:
-            circulating_supply= chain.get_circulating_supply()
+            circulating_supply = analyzer.get_circulating_supply()
         except Exception as e:
-            print("Not able to get circulating supply")
+            logging.error(f"Not able to get circulating supply due to {e}")
             circulating_supply = None
         try:
-            marketcap = chain.get_marketcap()
+            marketcap = analyzer.get_marketcap()
         except Exception as e:
-            print("Not able to get marketcap")
+            logging.error(f"Not able to get marketcap due to {e}")
             marketcap = None
         try:
-            owner = chain.get_owner()
-            ownership = "Renouced!" if owner in chain.dead else owner
+            owner = analyzer.get_owner()
+            ownership = "Renouced!" if owner in analyzer.dead else owner
         except Exception as e:
-            print("Not able to get owner")
+            logging.error(f"Not able to get owner due to {e}")
             ownership = "Not able to get owner"
         try:
             subprocess.run(["fuser", "-k", f"{port}/tcp"])
             using_ports.remove(port)
         except Exception as e:
-            print(e)
+            logging.error(e)
         return name, symbol, buy_tax, sell_tax, total_supply, circulating_supply, marketcap, ownership
 
     except Exception as e:
-        print("Exception occurred: ", e)
+        logging.error(f"Exception occurred: {e}", e)
         subprocess.run(["fuser", "-k", f"{port}/tcp"])
-        print("Something went wrong!")
+        logging.error("Something went wrong!")
