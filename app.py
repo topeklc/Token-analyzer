@@ -1,19 +1,21 @@
 # coding=utf8
 from flask import Flask
 from flask_restful import Resource, Api
-from src.run import run
+from src.resources.resources import *
 import os
 
 app = Flask(__name__)
 api = Api(app)
 
 
-class Check(Resource):
-    def get(self, token, chain):
-        name, symbol, buy_tax, sell_tax, total_supply, circulating_supply, marketcap, ownership = run(token, chain)
-        return {'name': name, 'symbol': symbol, 'total supply': total_supply, 'criculating supply': circulating_supply, 'marketcap': marketcap, "ownership": ownership, 'buy tax': buy_tax, 'sell tax': sell_tax}
-
-api.add_resource(Check, '/<string:chain>/<string:token>')
+api.add_resource(All, '/<string:chain>/<string:token>/all')
+api.add_resource(NameSymbol, '/<string:chain>/<string:token>/name')
+api.add_resource(BuyTax, '/<string:chain>/<string:token>/buy-tax')
+api.add_resource(SellTax, '/<string:chain>/<string:token>/sell-tax')
+api.add_resource(TotalSupply, '/<string:chain>/<string:token>/total-supply')
+api.add_resource(CirculatingSupply, '/<string:chain>/<string:token>/circulating-supply')
+api.add_resource(MarketCap, '/<string:chain>/<string:token>/marketcap')
+api.add_resource(Owner, '/<string:chain>/<string:token>/owner')
 
 if __name__ == '__main__':
     app.run(debug=True, host="0.0.0.0", port=int(os.environ.get("PORT", 8080)))
